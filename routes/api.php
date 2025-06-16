@@ -16,6 +16,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // Auth routes
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/profile', [AuthController::class, 'profile']);
+    Route::put('/profile', [AuthController::class, 'updateProfile']);
+
     
     // User Categories
     Route::apiResource('categories', UserCategoryController::class);
