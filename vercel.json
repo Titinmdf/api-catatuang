@@ -29,10 +29,10 @@
     "SESSION_DRIVER": "cookie",
 
     "DB_CONNECTION": "mysql",
-    "DB_HOST": "sql12.freesqldatabase.com",
-    "DB_PORT": "3306",
-    "DB_DATABASE": "sql12784988",
-    "DB_USERNAME": "sql12784988",
-    "DB_PASSWORD": "HQANUf262H"
+    "DB_HOST": "zot0w.h.filess.io",
+    "DB_PORT": "3307",
+    "DB_DATABASE": "catatuangv1_saltfindif",
+    "DB_USERNAME": "catatuangv1_saltfindif",
+    "DB_PASSWORD": "b970519e6f68734ce869ad9a774226197211bbf6"
   }
 }
