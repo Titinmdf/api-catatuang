@@ -16,12 +16,14 @@ class AuthController extends Controller
         try {
             $validated = $request->validate([
                 'name' => 'required|string|max:255',
+                'username' => 'required|string|max:50|unique:users',
                 'email' => 'required|string|email|max:255|unique:users',
-                'password' => 'required|string|min:8|confirmed', // Tambahkan confirmed
+                'password' => 'required|string|min:8|confirmed',
             ]);
 
             $user = User::create([
                 'name' => $validated['name'],
+                'username' => $validated['username'],
                 'email' => $validated['email'],
                 'password' => Hash::make($validated['password']),
             ]);
@@ -50,31 +52,31 @@ class AuthController extends Controller
         }
     }
 
-    // Login user
+    // Login user menggunakan email ATAU username
     public function login(Request $request)
     {
         try {
-            // Validasi input
             $request->validate([
-                'email' => 'required|email',
-                'password' => 'required',
+                'login' => 'required|string', // login bisa email atau username
+                'password' => 'required|string',
             ]);
 
-            // Cari user berdasarkan email
-            $user = User::where('email', $request->email)->first();
+            $login = $request->login;
 
-            // Cek apakah user ada dan password bener
+            // Cek berdasarkan username atau email
+            $user = User::where('username', $login)
+                        ->orWhere('email', $login)
+                        ->first();
+
             if (!$user || !Hash::check($request->password, $user->password)) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'Email atau password salah',
+                    'message' => 'Username/Email atau password salah',
                 ], 401);
             }
 
-            // Hapus token lama (opsional)
             $user->tokens()->delete();
 
-            // Bikin token baru
             $token = $user->createToken('auth_token')->plainTextToken;
 
             return response()->json([
@@ -88,18 +90,18 @@ class AuthController extends Controller
         } catch (ValidationException $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Validation failed',
-                'errors' => $e->errors()
+                'message' => 'Validasi gagal',
+                'errors' => $e->errors(),
             ], 422);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Login failed: ' . $e->getMessage(),
+                'message' => 'Login gagal: ' . $e->getMessage(),
             ], 500);
         }
     }
 
-    // Get data user yang lagi login (method user yang sudah ada)
+    // Get user aktif
     public function user(Request $request)
     {
         return response()->json([
@@ -108,7 +110,7 @@ class AuthController extends Controller
         ]);
     }
 
-    // Get data user yang lagi login (method profile sesuai route)
+    // Get profile user (alias)
     public function profile(Request $request)
     {
         return response()->json([
@@ -116,7 +118,8 @@ class AuthController extends Controller
             'data' => $request->user()
         ]);
     }
-    // Update data user yang sedang login
+
+    // Update profil user
     public function updateProfile(Request $request)
     {
         try {
@@ -124,12 +127,17 @@ class AuthController extends Controller
 
             $validated = $request->validate([
                 'name' => 'sometimes|string|max:255',
+                'username' => 'sometimes|string|max:50|unique:users,username,' . $user->id,
                 'email' => 'sometimes|email|unique:users,email,' . $user->id,
                 'password' => 'sometimes|string|min:8|confirmed',
             ]);
 
             if (isset($validated['name'])) {
                 $user->name = $validated['name'];
+            }
+
+            if (isset($validated['username'])) {
+                $user->username = $validated['username'];
             }
 
             if (isset($validated['email'])) {
@@ -161,12 +169,10 @@ class AuthController extends Controller
         }
     }
 
-
     // Logout user
     public function logout(Request $request)
     {
         try {
-            // Hapus token yang dipake sekarang
             $request->user()->currentAccessToken()->delete();
 
             return response()->json([
@@ -176,7 +182,7 @@ class AuthController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Logout failed: ' . $e->getMessage(),
+                'message' => 'Logout gagal: ' . $e->getMessage(),
             ], 500);
         }
     }
